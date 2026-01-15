@@ -1,0 +1,56 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "react-app"
+        CONTAINER_NAME = "infallible_hofstadter"
+    }
+
+    stages {
+
+        stage('Clone Code') {
+            steps {
+                git branch: 'master',
+                    url: 'https://github.com/johnpoly/DevOps-Project.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir('welcome-react'){
+                    bat 'docker build -t %IMAGE_NAME% .'      
+                }
+            }
+        }
+
+        stage('Stop Old Container') {
+            steps {
+                dir('welcome-react'){
+                bat '''
+                docker stop %CONTAINER_NAME% || exit 0
+                docker rm %CONTAINER_NAME% || exit 0
+                '''
+                }
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                dir('welcome-react'){
+                bat '''
+                docker run -d -p 5173:5173 --name %CONTAINER_NAME% %IMAGE_NAME%
+                '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'React app deployed using Docker successfully 🎉'
+        }
+        failure {
+            echo 'Deployment failed ❌'
+        }
+    }
+}
